@@ -76,4 +76,56 @@ class FaceDetector:
             for (mx, my, mw, mh) in face_features['mouth']:
                 cv2.rectangle(img_copy, (mx, my), (mx+mw, my+mh), (0, 0, 255), 2)
                 
-        return img_copy 
+        return img_copy
+
+def detect_facial_landmarks(image):
+    """
+    Detect facial landmarks using OpenCV's face detection
+    """
+    # Convert the image to grayscale
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    # Load the face cascade classifier
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    # Detect faces in the image
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    
+    if len(faces) == 0:
+        return None
+    
+    # Get the first face detected
+    (x, y, w, h) = faces[0]
+    
+    # Create basic facial landmarks (simplified version)
+    landmarks = {
+        'jaw': [(x + int(w*0.2), y + h), (x + int(w*0.8), y + h)],
+        'right_eyebrow': [(x + int(w*0.2), y + int(h*0.3)), (x + int(w*0.4), y + int(h*0.3))],
+        'left_eyebrow': [(x + int(w*0.6), y + int(h*0.3)), (x + int(w*0.8), y + int(h*0.3))],
+        'nose_bridge': [(x + int(w*0.5), y + int(h*0.4)), (x + int(w*0.5), y + int(h*0.6))],
+        'nose_tip': [(x + int(w*0.4), y + int(h*0.6)), (x + int(w*0.6), y + int(h*0.6))],
+        'right_eye': [(x + int(w*0.25), y + int(h*0.4)), (x + int(w*0.35), y + int(h*0.4))],
+        'left_eye': [(x + int(w*0.65), y + int(h*0.4)), (x + int(w*0.75), y + int(h*0.4))],
+        'outer_lip': [(x + int(w*0.3), y + int(h*0.8)), (x + int(w*0.7), y + int(h*0.8))]
+    }
+    
+    return landmarks
+
+def draw_landmarks(image, landmarks):
+    """
+    Draw facial landmarks on the image
+    """
+    if landmarks is None:
+        return image
+    
+    img_copy = image.copy()
+    
+    # Draw each facial feature
+    for feature, points in landmarks.items():
+        for point in points:
+            cv2.circle(img_copy, point, 2, (0, 255, 0), -1)
+        # Connect points if there are multiple
+        if len(points) > 1:
+            cv2.line(img_copy, points[0], points[1], (0, 255, 0), 1)
+    
+    return img_copy 

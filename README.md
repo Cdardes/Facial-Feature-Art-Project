@@ -18,27 +18,24 @@ This project uses computer vision techniques to detect facial features and creat
    - Download the shape predictor from [dlib's official model](http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2)
    - Extract and place it in the `models` directory
 
+## Configuration
+
+### Hugging Face Token
+This project uses Hugging Face models for enhanced facial feature detection. You need to provide your Hugging Face token in one of two ways:
+
+1. Create a `.env` file in the project root with:
+   ```
+   HUGGINGFACE_TOKEN=your_token_here
+   ```
+
+2. Or enter the token when prompted during application startup.
+
+To get a Hugging Face token:
+1. Sign up at https://huggingface.co
+2. Go to your profile settings
+3. Navigate to "Access Tokens"
+4. Create a new token with read access
+
 ## Usage
 1. Run the main application:
    ```
-   python src/main.py
-   ```
-2. Select an image using the file dialog
-3. Choose artistic filters and effects
-4. Save your creation
-
-## Project Structure
-```
-├── src/
-│   ├── main.py
-│   ├── face_detector.py
-│   └── art_filters.py
-├── models/
-│   └── shape_predictor_68_face_landmarks.dat
-├── samples/
-│   └── example.jpg
-└── output/
-```
-
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.

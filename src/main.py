@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import tkinter as tk
-from tkinter import filedialog, ttk
+from tkinter import filedialog, ttk, messagebox
 from PIL import Image, ImageTk
 import os
 from face_detector import FaceDetector
@@ -29,7 +29,10 @@ class FacialFeatureArtApp:
         # Create filter selection
         ttk.Label(self.main_frame, text="Select Art Style:").grid(row=1, column=0, padx=5, pady=5)
         self.style_var = tk.StringVar(value="sketch")
-        styles = ["sketch", "cartoon", "pop_art", "abstract", "highlight"]
+        styles = [
+            "sketch", "cartoon", "pop_art", "abstract", "highlight",
+            "neon_glow", "mosaic", "watercolor", "comic_book", "double_exposure"
+        ]
         self.style_combo = ttk.Combobox(self.main_frame, textvariable=self.style_var, values=styles)
         self.style_combo.grid(row=1, column=1, padx=5, pady=5)
         
@@ -62,6 +65,7 @@ class FacialFeatureArtApp:
                 
     def apply_effect(self):
         if self.current_image is None:
+            messagebox.showerror("Error", "Please load an image first!")
             return
             
         # Detect facial features
@@ -69,23 +73,37 @@ class FacialFeatureArtApp:
         
         # Apply selected effect
         style = self.style_var.get()
-        if style == "sketch":
-            self.processed_image = self.art_filters.apply_sketch_effect(self.current_image)
-        elif style == "cartoon":
-            self.processed_image = self.art_filters.apply_cartoon_effect(self.current_image)
-        elif style == "pop_art":
-            self.processed_image = self.art_filters.apply_pop_art_effect(self.current_image, features)
-        elif style == "abstract":
-            self.processed_image = self.art_filters.apply_abstract_art(self.current_image, features)
-        elif style == "highlight":
-            self.processed_image = self.art_filters.apply_feature_highlighting(self.current_image, features)
+        try:
+            if style == "sketch":
+                self.processed_image = self.art_filters.apply_sketch_effect(self.current_image)
+            elif style == "cartoon":
+                self.processed_image = self.art_filters.apply_cartoon_effect(self.current_image)
+            elif style == "pop_art":
+                self.processed_image = self.art_filters.apply_pop_art_effect(self.current_image, features)
+            elif style == "abstract":
+                self.processed_image = self.art_filters.apply_abstract_art(self.current_image, features)
+            elif style == "highlight":
+                self.processed_image = self.art_filters.apply_feature_highlighting(self.current_image, features)
+            elif style == "neon_glow":
+                self.processed_image = self.art_filters.apply_neon_glow(self.current_image, features)
+            elif style == "mosaic":
+                self.processed_image = self.art_filters.apply_mosaic_art(self.current_image, features)
+            elif style == "watercolor":
+                self.processed_image = self.art_filters.apply_watercolor(self.current_image)
+            elif style == "comic_book":
+                self.processed_image = self.art_filters.apply_comic_book(self.current_image, features)
+            elif style == "double_exposure":
+                self.processed_image = self.art_filters.apply_double_exposure(self.current_image, features)
             
-        # Display processed image
-        if self.processed_image is not None:
-            self.display_image(self.processed_image, self.processed_label)
+            # Display processed image
+            if self.processed_image is not None:
+                self.display_image(self.processed_image, self.processed_label)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to apply effect: {str(e)}")
             
     def save_image(self):
         if self.processed_image is None:
+            messagebox.showerror("Error", "Please apply an effect first!")
             return
             
         file_path = filedialog.asksaveasfilename(
@@ -94,6 +112,7 @@ class FacialFeatureArtApp:
         )
         if file_path:
             cv2.imwrite(file_path, self.processed_image)
+            messagebox.showinfo("Success", "Image saved successfully!")
             
     def display_image(self, image, label, max_size=400):
         # Convert BGR to RGB

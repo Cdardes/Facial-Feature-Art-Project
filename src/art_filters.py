@@ -28,65 +28,107 @@ class ArtisticFilters:
         return cartoon
 
     @staticmethod
-    def apply_pop_art(image: np.ndarray) -> List[np.ndarray]:
+    def apply_pop_art_effect(image: np.ndarray, features: List[dict]) -> np.ndarray:
         """
-        Create pop art style effect with multiple color variations.
+        Create a pop art effect focusing on facial features.
         """
-        pop_arts = []
+        output = image.copy()
         
-        # Create different color variations
-        color_variations = [
-            {'b': 0.8, 'g': 0.2, 'r': 0.2},
-            {'b': 0.2, 'g': 0.8, 'r': 0.2},
-            {'b': 0.2, 'g': 0.2, 'r': 0.8},
-            {'b': 0.8, 'g': 0.8, 'r': 0.2}
-        ]
+        # Apply vibrant color palette
+        output = cv2.convertScaleAbs(output, alpha=1.2, beta=10)
         
-        for color in color_variations:
-            temp = image.copy()
-            temp[:, :, 0] = temp[:, :, 0] * color['b']
-            temp[:, :, 1] = temp[:, :, 1] * color['g']
-            temp[:, :, 2] = temp[:, :, 2] * color['r']
+        for face_dict in features:
+            # Get face region
+            x, y, w, h = face_dict['face']
+            face_roi = output[y:y+h, x:x+w]
             
-            # Enhance contrast
-            temp = cv2.convertScaleAbs(temp, alpha=1.3, beta=20)
-            pop_arts.append(temp)
+            # Apply color effects to eyes
+            for (ex, ey, ew, eh) in face_dict['eyes']:
+                # Convert to local coordinates
+                local_ex, local_ey = ex-x, ey-y
+                cv2.rectangle(face_roi, (local_ex, local_ey), 
+                            (local_ex+ew, local_ey+eh), (0, 255, 255), -1)
             
-        return pop_arts
+            # Apply color effects to mouth
+            for (mx, my, mw, mh) in face_dict['mouth']:
+                # Convert to local coordinates
+                local_mx, local_my = mx-x, my-y
+                cv2.rectangle(face_roi, (local_mx, local_my), 
+                            (local_mx+mw, local_my+mh), (255, 50, 50), -1)
+            
+            # Add artistic border to face
+            cv2.rectangle(output, (x, y), (x+w, y+h), (0, 255, 0), 3)
+            
+        return output
 
     @staticmethod
-    def apply_feature_highlight(image: np.ndarray, landmarks: np.ndarray, 
-                              feature_name: str, color: Tuple[int, int, int]) -> np.ndarray:
+    def apply_abstract_art(image: np.ndarray, features: List[dict]) -> np.ndarray:
         """
-        Highlight specific facial features with artistic effects.
+        Create an abstract art representation of facial features.
         """
-        result = image.copy()
-        mask = np.zeros_like(image)
+        # Create a black canvas
+        canvas = np.zeros_like(image)
         
-        # Draw the feature on the mask
-        cv2.fillPoly(mask, [landmarks], color)
+        for face_dict in features:
+            # Draw face outline
+            x, y, w, h = face_dict['face']
+            cv2.ellipse(canvas, (x + w//2, y + h//2), (w//2, h//2), 
+                       0, 0, 360, (255, 255, 255), -1)
+            
+            # Draw abstract eyes
+            for (ex, ey, ew, eh) in face_dict['eyes']:
+                center = (ex + ew//2, ey + eh//2)
+                cv2.circle(canvas, center, max(ew, eh)//2, (0, 255, 255), -1)
+                cv2.circle(canvas, center, max(ew, eh)//4, (255, 0, 0), -1)
+            
+            # Draw abstract mouth
+            for (mx, my, mw, mh) in face_dict['mouth']:
+                cv2.ellipse(canvas, (mx + mw//2, my + mh//2), 
+                          (mw//2, mh//2), 0, 0, 180, (0, 0, 255), -1)
         
-        # Blend the mask with the original image
-        result = cv2.addWeighted(result, 0.8, mask, 0.2, 0)
-        return result
+        # Add some artistic effects
+        canvas = cv2.GaussianBlur(canvas, (5, 5), 0)
+        canvas = cv2.addWeighted(canvas, 0.7, image, 0.3, 0)
+        
+        return canvas
 
     @staticmethod
-    def create_abstract_art(landmarks: np.ndarray, image_shape: Tuple[int, int, int]) -> np.ndarray:
+    def apply_feature_highlighting(image: np.ndarray, features: List[dict]) -> np.ndarray:
         """
-        Create abstract art based on facial landmarks.
+        Create an artistic effect that highlights facial features.
         """
-        canvas = np.zeros(image_shape, dtype=np.uint8)
+        # Create a darkened version of the image
+        output = cv2.convertScaleAbs(image, alpha=0.5, beta=0)
         
-        # Generate random colors
-        colors = np.random.randint(0, 255, (len(landmarks), 3))
-        
-        # Draw abstract shapes based on landmarks
-        for i, point in enumerate(landmarks):
-            size = np.random.randint(5, 20)
-            color = tuple(map(int, colors[i]))
-            cv2.circle(canvas, tuple(point), size, color, -1)
+        for face_dict in features:
+            # Get face region
+            x, y, w, h = face_dict['face']
+            face_roi = image[y:y+h, x:x+w]
             
-            if i > 0:
-                cv2.line(canvas, tuple(landmarks[i-1]), tuple(point), color, 2)
+            # Create mask for the face
+            mask = np.zeros((h, w), dtype=np.uint8)
+            cv2.ellipse(mask, (w//2, h//2), (w//2, h//2), 0, 0, 360, 255, -1)
+            
+            # Copy the original face with mask
+            output[y:y+h, x:x+w] = cv2.bitwise_and(face_roi, face_roi, mask=mask)
+            
+            # Highlight eyes
+            for (ex, ey, ew, eh) in face_dict['eyes']:
+                # Convert to local coordinates
+                local_ex, local_ey = ex-x, ey-y
+                eye_roi = face_roi[local_ey:local_ey+eh, local_ex:local_ex+ew]
+                # Brighten the eyes
+                bright_eyes = cv2.convertScaleAbs(eye_roi, alpha=1.5, beta=30)
+                face_roi[local_ey:local_ey+eh, local_ex:local_ex+ew] = bright_eyes
+            
+            # Highlight mouth
+            for (mx, my, mw, mh) in face_dict['mouth']:
+                # Convert to local coordinates
+                local_mx, local_my = mx-x, my-y
+                mouth_roi = face_roi[local_my:local_my+mh, local_mx:local_mx+mw]
+                # Add color to the lips
+                colored_lips = cv2.addWeighted(mouth_roi, 0.7, 
+                                             np.full_like(mouth_roi, (80, 0, 255)), 0.3, 0)
+                face_roi[local_my:local_my+mh, local_mx:local_mx+mw] = colored_lips
         
-        return canvas 
+        return output 

@@ -41,9 +41,9 @@ class ImageGenerator:
             image_data = self.client.text_to_image(
                 prompt=enhanced_prompt,
                 negative_prompt=negative_prompt,
+                model="stabilityai/stable-diffusion-2-1",
                 width=512,
-                height=512,
-                max_new_tokens=250
+                height=512
             )
             
             # Convert to numpy array
